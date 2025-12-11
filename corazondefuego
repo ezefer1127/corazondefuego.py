@@ -1,0 +1,49 @@
+import streamlit as st
+import pandas as pd
+from datetime import datetime
+
+# Título de la aplicación
+st.title('Control de Ingresos y Salidas')
+
+# Crea un formulario para ingresar los datos
+with st.form(key='form'):
+    st.subheader('Registra un nuevo movimiento:')
+    date = st.date_input('Fecha', datetime.today())
+    description = st.text_input('Descripción')
+    amount = st.number_input('Monto', min_value=0.0)
+    category = st.selectbox('Categoría', ['Ingreso', 'Salida'])
+
+    # Botón para enviar el formulario
+    submit_button = st.form_submit_button(label='Registrar')
+
+# Lógica para almacenar los movimientos en un DataFrame
+if submit_button:
+    # Cargar los datos existentes de GitHub o crear un nuevo DataFrame si no existe
+    try:
+        data = pd.read_csv('movimientos.csv')
+    except FileNotFoundError:
+        data = pd.DataFrame(columns=['Fecha', 'Descripción', 'Monto', 'Categoría'])
+
+    # Crear un nuevo movimiento
+    new_entry = pd.DataFrame({
+        'Fecha': [date],
+        'Descripción': [description],
+        'Monto': [amount],
+        'Categoría': [category]
+    })
+
+    # Agregar el nuevo movimiento al DataFrame
+    data = pd.concat([data, new_entry], ignore_index=True)
+
+    # Guardar el DataFrame actualizado en un archivo CSV
+    data.to_csv('movimientos.csv', index=False)
+
+    st.success('Movimiento registrado correctamente.')
+
+# Mostrar los datos del balance diario
+st.subheader('Balance Diario')
+balance = data.groupby('Fecha')['Monto'].sum().reset_index()
+balance['Balance'] = balance['Monto'].cumsum()  # Sumar el balance acumulado
+
+st.dataframe(balance)
+ 
